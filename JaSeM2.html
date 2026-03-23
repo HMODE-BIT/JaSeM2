@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>JaSeM</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+/* ── THEMES ── */
+[data-theme="dark"] {
+  --bg: #0e0e10;
+  --bg2: #16161a;
+  --surface: #1c1c21;
+  --border: #2a2a32;
+  --text: #f0f0f4;
+  --text2: #9090a0;
+  --accent: #6c63ff;
+  --accent-glow: rgba(108,99,255,0.25);
+  --green: #34d399;
+  --red: #f87171;
+  --orb-idle: linear-gradient(145deg, #6c63ff, #a855f7);
+  --orb-listen: linear-gradient(145deg, #f87171, #fb923c);
+  --orb-speak: linear-gradient(145deg, #34d399, #22d3ee);
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+[data-theme="light"] {
+  --bg: #f5f5f7;
+  --bg2: #ffffff;
+  --surface: #ffffff;
+  --border: #e0e0e8;
+  --text: #111118;
+  --text2: #777788;
+  --accent: #5b52f0;
+  --accent-glow: rgba(91,82,240,0.15);
+  --green: #059669;
+  --red: #dc2626;
+  --orb-idle: linear-gradient(145deg, #5b52f0, #9333ea);
+  --orb-listen: linear-gradient(145deg, #dc2626, #ea580c);
+  --orb-speak: linear-gradient(145deg, #059669, #0891b2);
+  --shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.5;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ── LOCK ── */
+#lock {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1.5rem; z-index: 1000; padding: 2rem;
+}
+.lock-logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 4rem; color: var(--text);
+  letter-spacing: -2px;
+}
+.lock-logo span { color: var(--accent); }
+.lock-sub { color: var(--text2); font-size: 0.85rem; }
+.field {
+  width: 100%; max-width: 300px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 0.9rem 1.2rem;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+  text-align: center;
+}
+.field:focus { border-color: var(--accent); }
+.btn-primary {
+  width: 100%; max-width: 300px;
+  background: var(--accent);
+  border: none; border-radius: 14px;
+  padding: 0.9rem;
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem; font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+.btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+.err { color: var(--red); font-size: 0.8rem; min-height: 1rem; }
+
+/* ── SETUP ── */
+#setup {
+  position: fixed; inset: 0; background: var(--bg);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: flex-start;
+  padding: 3rem 2rem 2rem; gap: 1.2rem;
+  overflow-y: auto; z-index: 999;
+}
+.setup-title { font-family: 'DM Serif Display', serif; font-size: 1.8rem; }
+.label {
+  width: 100%; max-width: 300px;
+  font-size: 0.72rem; font-weight: 500;
+  color: var(--text2); text-transform: uppercase; letter-spacing: 1.5px;
+}
+.seg {
+  display: flex; width: 100%; max-width: 300px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+}
+.seg-btn {
+  flex: 1; padding: 0.7rem;
+  border: none; background: transparent;
+  color: var(--text2); font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem; font-weight: 500;
+  cursor: pointer; transition: all 0.2s;
+}
+.seg-btn.on { background: var(--accent); color: #fff; }
+.warn { color: var(--text2); font-size: 0.72rem; max-width: 300px; text-align: center; line-height: 1.6; }
+
+/* ── APP ── */
+#app { display: none; flex-direction: column; min-height: 100vh; }
+
+/* Header */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 50;
+}
+.logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.5rem; color: var(--text);
+  letter-spacing: -0.5px;
+}
+.logo span { color: var(--accent); }
+.hdr-actions { display: flex; gap: 0.5rem; align-items: center; }
+.chip {
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text2); font-size: 0.75rem; font-weight: 500;
+  cursor: pointer; transition: all 0.2s;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.theme-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text2); font-size: 1rem;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.theme-btn:hover { border-color: var(--accent); }
+
+/* Nav */
+nav {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  overflow-x: auto; scrollbar-width: none;
+}
+nav::-webkit-scrollbar { display: none; }
+.nav-item {
+  flex: 1; min-width: 60px;
+  padding: 0.75rem 0.5rem;
+  text-align: center; cursor: pointer;
+  color: var(--text2); font-size: 0.72rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 1px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s; white-space: nowrap;
+  position: relative;
+}
+.nav-item.on { color: var(--accent); border-bottom-color: var(--accent); }
+.dot {
+  position: absolute; top: 6px; right: calc(50% - 16px);
+  background: var(--accent); color: #fff;
+  border-radius: 10px; padding: 0 5px;
+  font-size: 0.6rem; line-height: 1.4;
+}
+
+/* Pages */
+.pg { display: none; flex-direction: column; gap: 1.25rem; padding: 1.25rem; }
+.pg.on { display: flex; }
+
+/* ── VOICE ── */
+.voice-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 1.75rem; padding: 1.5rem 0;
+}
+.voice-controls {
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.voice-sel {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 0.5rem 0.75rem;
+  color: var(--text); font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem; outline: none; cursor: pointer;
+}
+
+/* Orb */
+.orb-container { position: relative; }
+.orb-ring {
+  position: absolute; inset: -8px; border-radius: 50%;
+  border: 2px solid transparent;
+  transition: all 0.3s;
+}
+.orb-ring.active {
+  border-color: var(--accent);
+  animation: spin-ring 3s linear infinite;
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+@keyframes spin-ring {
+  to { transform: rotate(360deg); }
+}
+.orb {
+  width: 140px; height: 140px; border-radius: 50%;
+  background: var(--orb-idle);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.5rem;
+  box-shadow: var(--shadow), 0 0 0 0 var(--accent-glow);
+  transition: all 0.3s;
+  position: relative; overflow: hidden;
+}
+.orb::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(255,255,255,0.08);
+  border-radius: 50%;
+}
+.orb.listen { background: var(--orb-listen); animation: pulse 1.2s ease-in-out infinite; }
+.orb.speak { background: var(--orb-speak); animation: breathe 1.5s ease-in-out infinite; }
+@keyframes pulse {
+  0%,100% { transform: scale(1); box-shadow: var(--shadow); }
+  50% { transform: scale(1.06); box-shadow: var(--shadow), 0 0 30px rgba(248,113,113,0.4); }
+}
+@keyframes breathe {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.04); box-shadow: var(--shadow), 0 0 40px rgba(52,211,153,0.5); }
+}
+.orb-label {
+  font-size: 0.75rem; color: var(--text2);
+  letter-spacing: 1px; text-transform: uppercase;
+}
+.end-btn {
+  background: transparent;
+  border: 1.5px solid var(--red);
+  border-radius: 10px; padding: 0.6rem 1.5rem;
+  color: var(--red); font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem; font-weight: 500;
+  cursor: pointer; transition: all 0.2s;
+}
+.end-btn:hover { background: rgba(248,113,113,0.08); }
+
+/* Transcript */
+.t-block { display: flex; flex-direction: column; gap: 0.3rem; }
+.t-who { font-size: 0.68rem; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+.t-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 0.85rem 1rem;
+  font-size: 0.88rem; line-height: 1.6; color: var(--text);
+  min-height: 48px;
+}
+
+/* ── TASKS / NOTES ── */
+.sec-hdr { display: flex; align-items: center; justify-content: space-between; }
+.sec-title { font-family: 'DM Serif Display', serif; font-size: 1.3rem; }
+.btn-add {
+  background: var(--accent); border: none; border-radius: 10px;
+  padding: 0.5rem 1rem; color: #fff;
+  font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600;
+  cursor: pointer; transition: opacity 0.2s;
+  box-shadow: 0 2px 12px var(--accent-glow);
+}
+.btn-add:active { opacity: 0.8; }
+.form-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 1rem;
+  display: none; flex-direction: column; gap: 0.6rem;
+}
+.form-box.on { display: flex; }
+.inp {
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 0.7rem 0.9rem;
+  color: var(--text); font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem; outline: none; width: 100%;
+}
+.inp:focus { border-color: var(--accent); }
+.inp-date {
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 0.7rem 0.9rem;
+  color: var(--text2); font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem; outline: none;
+}
+.item-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 0.85rem 1rem;
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  transition: border-color 0.2s;
+}
+.item-card:hover { border-color: var(--accent); }
+.chk {
+  width: 20px; height: 20px; border-radius: 6px;
+  border: 2px solid var(--border);
+  background: transparent; cursor: pointer;
+  flex-shrink: 0; margin-top: 1px;
+  appearance: none; -webkit-appearance: none;
+  transition: all 0.2s; position: relative;
+}
+.chk:checked {
+  background: var(--accent); border-color: var(--accent);
+}
+.chk:checked::after {
+  content: '✓'; position: absolute;
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  color: #fff; font-size: 0.7rem; font-weight: 700;
+}
+.item-body { flex: 1; }
+.item-title { font-size: 0.88rem; font-weight: 500; }
+.item-title.done { text-decoration: line-through; color: var(--text2); }
+.item-date { font-size: 0.72rem; color: var(--text2); margin-top: 0.2rem; }
+.item-content { font-size: 0.78rem; color: var(--text2); margin-top: 0.3rem; line-height: 1.5; }
+.btn-del {
+  background: none; border: none; color: var(--border);
+  cursor: pointer; font-size: 1.1rem; padding: 0 2px;
+  transition: color 0.2s; flex-shrink: 0;
+}
+.btn-del:hover { color: var(--red); }
+.empty-state {
+  text-align: center; color: var(--text2);
+  font-size: 0.85rem; padding: 2.5rem 1rem;
+  border: 1px dashed var(--border); border-radius: 14px;
+}
+
+/* Memory */
+.mem-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 0.85rem 1rem;
+}
+.mem-date { font-size: 0.7rem; color: var(--accent); font-weight: 600; margin-bottom: 0.4rem; }
+.mem-text { font-size: 0.8rem; color: var(--text2); line-height: 1.5; }
+.btn-ghost {
+  background: none; border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 0.5rem 1rem;
+  color: var(--text2); font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
+}
+.btn-ghost:hover { border-color: var(--red); color: var(--red); }
+
+/* Settings */
+.s-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 1.1rem;
+  display: flex; flex-direction: column; gap: 0.75rem;
+}
+.s-title { font-size: 0.72rem; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 1.5px; }
+.msg-ok { color: var(--green); font-size: 0.78rem; }
+.msg-err { color: var(--red); font-size: 0.78rem; }
+</style>
+</head>
+<body>
+
+<!-- LOCK -->
+<div id="lock">
+  <div class="lock-logo">Ja<span>S</span>eM</div>
+  <div class="lock-sub">Your personal AI assistant</div>
+  <input class="field" type="password" id="lp" placeholder="Enter password" autocomplete="current-password">
+  <div class="err" id="le"></div>
+  <button class="btn-primary" onclick="unlock()">Unlock</button>
+</div>
+
+<!-- SETUP -->
+<div id="setup">
+  <div class="setup-title">Welcome to JaSeM</div>
+  <div style="color:var(--text2);font-size:0.85rem">One-time setup</div>
+
+  <div class="label">Create a password</div>
+  <input class="field" type="password" id="sp" placeholder="Choose a password">
+
+  <div class="label">AI Provider</div>
+  <div class="seg">
+    <button class="seg-btn on" id="s-xai" onclick="selProv('xai')">xAI Grok</button>
+    <button class="seg-btn" id="s-gem" onclick="selProv('gemini')">Gemini</button>
+  </div>
+
+  <div class="label" id="kl">xAI API Key</div>
+  <input class="field" type="text" id="sk" placeholder="xai-...">
+
+  <div class="label" id="vl" style="">Voice (xAI)</div>
+  <select class="field" id="sv" style="text-align:left">
+    <option value="eve">Eve — Female, Energetic</option>
+    <option value="ara">Ara — Female, Warm</option>
+    <option value="rex">Rex — Male, Clear</option>
+    <option value="sal">Sal — Neutral</option>
+    <option value="leo">Leo — Male, Strong</option>
+  </select>
+
+  <div class="warn">⚠ API key is stored only on this device. Never uploaded anywhere.</div>
+  <button class="btn-primary" onclick="doSetup()">Get Started</button>
+  <div class="err" id="se"></div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="logo">Ja<span>S</span>eM</div>
+    <div class="hdr-actions">
+      <span class="chip" id="prov-chip" onclick="toggleProv()">xAI</span>
+      <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+      <button class="chip" onclick="doLock()">Lock</button>
+    </div>
+  </header>
+
+  <nav>
+    <div class="nav-item on" onclick="goTab('voice')">Voice</div>
+    <div class="nav-item" onclick="goTab('tasks')">Tasks<span class="dot" id="td">0</span></div>
+    <div class="nav-item" onclick="goTab('notes')">Notes<span class="dot" id="nd">0</span></div>
+    <div class="nav-item" onclick="goTab('memory')">Memory</div>
+    <div class="nav-item" onclick="goTab('settings')">Settings</div>
+  </nav>
+
+  <!-- VOICE -->
+  <div class="pg on" id="pg-voice">
+    <div class="voice-wrap">
+      <div class="voice-controls">
+        <select class="voice-sel" id="vsel" onchange="chVoice()">
+          <option value="eve">Eve</option>
+          <option value="ara">Ara</option>
+          <option value="rex">Rex</option>
+          <option value="sal">Sal</option>
+          <option value="leo">Leo</option>
+        </select>
+        <span class="chip" id="prov-chip2" onclick="toggleProv()">xAI</span>
+      </div>
+      <div class="orb-container">
+        <div class="orb-ring" id="orb-ring"></div>
+        <button class="orb" id="orb" onclick="tapOrb()">🎙️</button>
+      </div>
+      <div class="orb-label" id="orb-lbl">Tap to start</div>
+      <button class="end-btn" id="end-btn" style="display:none" onclick="stopVoice()">End conversation</button>
+    </div>
+
+    <div id="tx-area" style="display:none;flex-direction:column;gap:0.75rem">
+      <div class="t-block" id="tx-user" style="display:none">
+        <div class="t-who">You</div>
+        <div class="t-box" id="tx-user-text"></div>
+      </div>
+      <div class="t-block" id="tx-ai" style="display:none">
+        <div class="t-who">JaSeM</div>
+        <div class="t-box" id="tx-ai-text"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASKS -->
+  <div class="pg" id="pg-tasks">
+    <div class="sec-hdr">
+      <div class="sec-title">Tasks</div>
+      <button class="btn-add" onclick="togAddTask()">+ Add</button>
+    </div>
+    <div class="form-box" id="task-form">
+      <input class="inp" type="text" id="nt" placeholder="What needs to be done?" onkeydown="if(event.key==='Enter')addTask()">
+      <input class="inp-date" type="date" id="ntd">
+      <button class="btn-add" onclick="addTask()">Save</button>
+    </div>
+    <div id="tlist"></div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="pg" id="pg-notes">
+    <div class="sec-hdr">
+      <div class="sec-title">Notes</div>
+      <button class="btn-add" onclick="togAddNote()">+ Add</button>
+    </div>
+    <div class="form-box" id="note-form">
+      <input class="inp" type="text" id="nn" placeholder="Title">
+      <textarea class="inp" id="nc" placeholder="Content..." rows="3" style="resize:vertical"></textarea>
+      <button class="btn-add" onclick="addNote()">Save</button>
+    </div>
+    <div id="nlist"></div>
+  </div>
+
+  <!-- MEMORY -->
+  <div class="pg" id="pg-memory">
+    <div class="sec-hdr">
+      <div class="sec-title">History</div>
+      <button class="btn-ghost" onclick="clrMem()">Clear all</button>
+    </div>
+    <div id="mlist"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="pg" id="pg-settings">
+    <div class="sec-title" style="font-family:'DM Serif Display',serif">Settings</div>
+
+    <div class="s-card">
+      <div class="s-title">Provider</div>
+      <div class="seg">
+        <button class="seg-btn" id="ss-xai" onclick="setProv('xai')">xAI Grok</button>
+        <button class="seg-btn" id="ss-gem" onclick="setProv('gemini')">Gemini</button>
+      </div>
+    </div>
+
+    <div class="s-card">
+      <div class="s-title">API Key</div>
+      <input class="inp" type="text" id="skey" placeholder="Paste your API key...">
+      <button class="btn-add" style="width:fit-content" onclick="saveKey()">Save Key</button>
+    </div>
+
+    <div class="s-card">
+      <div class="s-title">Change Password</div>
+      <input class="inp" type="password" id="sop" placeholder="Current password">
+      <input class="inp" type="password" id="snp" placeholder="New password">
+      <button class="btn-add" style="width:fit-content" onclick="chPass()">Change</button>
+      <div id="pm"></div>
+    </div>
+
+    <div class="s-card">
+      <div class="s-title">Backup</div>
+      <button class="btn-ghost" onclick="expData()">Export data as JSON</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+const K = 'jasem2';
+const ld = () => { try { return JSON.parse(localStorage.getItem(K)||'{}'); } catch { return {}; } };
+const sv = d => localStorage.setItem(K, JSON.stringify(d));
+const gd = () => { const d=ld(); return { pw:d.pw||null, prov:d.prov||'xai', key:d.key||'', voice:d.voice||'eve', tasks:d.tasks||[], notes:d.notes||[], mem:d.mem||[], theme:d.theme||'dark' }; };
+const ud = u => { const d=ld(); sv({...d,...u}); };
+
+// ══════════════════════════════════════════
+// THEME
+// ══════════════════════════════════════════
+let isDark = true;
+function applyTheme(dark) {
+  isDark = dark;
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = dark ? '🌙' : '☀️';
+  ud({ theme: dark ? 'dark' : 'light' });
+}
+function toggleTheme() { applyTheme(!isDark); }
+
+// ══════════════════════════════════════════
+// LOCK / SETUP
+// ══════════════════════════════════════════
+let setupProv = 'xai';
+function selProv(p) {
+  setupProv = p;
+  document.getElementById('s-xai').className = 'seg-btn'+(p==='xai'?' on':'');
+  document.getElementById('s-gem').className = 'seg-btn'+(p==='gemini'?' on':'');
+  document.getElementById('kl').textContent = p==='xai' ? 'xAI API Key' : 'Gemini API Key';
+  document.getElementById('sk').placeholder = p==='xai' ? 'xai-...' : 'AIza...';
+  document.getElementById('vl').style.display = p==='xai' ? '' : 'none';
+  document.getElementById('sv').style.display = p==='xai' ? '' : 'none';
+}
+
+function doSetup() {
+  const pw = document.getElementById('sp').value.trim();
+  const key = document.getElementById('sk').value.trim();
+  const voice = document.getElementById('sv').value;
+  if (!pw) { document.getElementById('se').textContent='Password required'; return; }
+  if (!key) { document.getElementById('se').textContent='API key required'; return; }
+  ud({ pw: btoa(pw), prov: setupProv, key, voice });
+  document.getElementById('setup').style.display = 'none';
+  boot();
+}
+
+function unlock() {
+  const d = gd();
+  if (!d.pw) { document.getElementById('lock').style.display='none'; document.getElementById('setup').style.display='flex'; return; }
+  const pw = document.getElementById('lp').value;
+  if (btoa(pw) === d.pw) { document.getElementById('lock').style.display='none'; boot(); }
+  else { document.getElementById('le').textContent='Wrong password'; document.getElementById('lp').value=''; }
+}
+document.getElementById('lp').addEventListener('keydown', e => { if(e.key==='Enter') unlock(); });
+
+function doLock() {
+  stopVoice();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('lock').style.display = 'flex';
+  document.getElementById('lp').value = '';
+  document.getElementById('le').textContent = '';
+}
+
+function boot() {
+  const d = gd();
+  applyTheme(d.theme === 'dark');
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('vsel').value = d.voice;
+  updProvUI(d.prov);
+  rTasks(); rNotes(); rMem(); updSetUI();
+}
+
+window.addEventListener('load', () => {
+  const d = gd();
+  applyTheme(d.theme === 'dark');
+  if (!d.pw) { document.getElementById('lock').style.display='none'; document.getElementById('setup').style.display='flex'; }
+});
+
+// ══════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════
+function goTab(name) {
+  document.querySelectorAll('.nav-item').forEach((el,i) => {
+    el.className = 'nav-item' + (['voice','tasks','notes','memory','settings'][i]===name?' on':'');
+  });
+  document.querySelectorAll('.pg').forEach(el => el.className = 'pg');
+  document.getElementById('pg-'+name).className = 'pg on';
+}
+
+// ══════════════════════════════════════════
+// PROVIDER
+// ══════════════════════════════════════════
+function updProvUI(p) {
+  const lbl = p==='xai' ? 'xAI' : 'Gemini';
+  document.getElementById('prov-chip').textContent = lbl;
+  document.getElementById('prov-chip2').textContent = lbl;
+  document.getElementById('vsel').style.display = p==='xai' ? '' : 'none';
+}
+function toggleProv() {
+  const d = gd(); const np = d.prov==='xai'?'gemini':'xai';
+  ud({ prov: np }); updProvUI(np); updSetUI();
+}
+function setProv(p) { ud({ prov: p }); updProvUI(p); updSetUI(); }
+function updSetUI() {
+  const d = gd();
+  document.getElementById('ss-xai').className = 'seg-btn'+(d.prov==='xai'?' on':'');
+  document.getElementById('ss-gem').className = 'seg-btn'+(d.prov==='gemini'?' on':'');
+  document.getElementById('skey').value = d.key || '';
+}
+function saveKey() {
+  const k = document.getElementById('skey').value.trim();
+  if (k) { ud({ key: k }); alert('Saved!'); }
+}
+function chPass() {
+  const d = gd();
+  const op = document.getElementById('sop').value;
+  const np = document.getElementById('snp').value;
+  const el = document.getElementById('pm');
+  if (btoa(op) !== d.pw) { el.className='msg-err'; el.textContent='Wrong current password'; return; }
+  if (!np) { el.className='msg-err'; el.textContent='New password required'; return; }
+  ud({ pw: btoa(np) });
+  el.className='msg-ok'; el.textContent='Password changed!';
+  document.getElementById('sop').value=''; document.getElementById('snp').value='';
+}
+function chVoice() { ud({ voice: document.getElementById('vsel').value }); }
+
+// ══════════════════════════════════════════
+// TASKS
+// ══════════════════════════════════════════
+function rTasks() {
+  const d = gd();
+  const pending = d.tasks.filter(t=>!t.done).length;
+  document.getElementById('td').textContent = pending;
+  const el = document.getElementById('tlist');
+  if (!d.tasks.length) { el.innerHTML='<div class="empty-state">No tasks yet.<br>Ask JaSeM to create one!</div>'; return; }
+  el.innerHTML = d.tasks.map((t,i) => `
+    <div class="item-card">
+      <input type="checkbox" class="chk" ${t.done?'checked':''} onchange="togTask(${i})">
+      <div class="item-body">
+        <div class="item-title ${t.done?'done':''}">${t.title}</div>
+        ${t.date?`<div class="item-date">${t.date}</div>`:''}
+      </div>
+      <button class="btn-del" onclick="delTask(${i})">×</button>
+    </div>`).join('');
+}
+function togAddTask() {
+  const f=document.getElementById('task-form');
+  f.className = f.className.includes('on') ? 'form-box' : 'form-box on';
+}
+function addTask() {
+  const t=document.getElementById('nt').value.trim();
+  const dt=document.getElementById('ntd').value;
+  if (!t) return;
+  const d=gd(); d.tasks.unshift({title:t,date:dt,done:false,id:Date.now()});
+  ud({tasks:d.tasks});
+  document.getElementById('nt').value=''; document.getElementById('ntd').value='';
+  document.getElementById('task-form').className='form-box';
+  rTasks();
+}
+function togTask(i) { const d=gd(); d.tasks[i].done=!d.tasks[i].done; ud({tasks:d.tasks}); rTasks(); }
+function delTask(i) { const d=gd(); d.tasks.splice(i,1); ud({tasks:d.tasks}); rTasks(); }
+
+// ══════════════════════════════════════════
+// NOTES
+// ══════════════════════════════════════════
+function rNotes() {
+  const d=gd();
+  document.getElementById('nd').textContent = d.notes.length;
+  const el=document.getElementById('nlist');
+  if (!d.notes.length) { el.innerHTML='<div class="empty-state">No notes yet.<br>Ask JaSeM to save one!</div>'; return; }
+  el.innerHTML = d.notes.map((n,i) => `
+    <div class="item-card" style="flex-direction:column;align-items:stretch">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="item-title">${n.title}</div>
+        <button class="btn-del" onclick="delNote(${i})">×</button>
+      </div>
+      <div class="item-content">${n.content}</div>
+    </div>`).join('');
+}
+function togAddNote() {
+  const f=document.getElementById('note-form');
+  f.className = f.className.includes('on') ? 'form-box' : 'form-box on';
+}
+function addNote() {
+  const t=document.getElementById('nn').value.trim();
+  const c=document.getElementById('nc').value.trim();
+  if (!t) return;
+  const d=gd(); d.notes.unshift({title:t,content:c,id:Date.now()});
+  ud({notes:d.notes});
+  document.getElementById('nn').value=''; document.getElementById('nc').value='';
+  document.getElementById('note-form').className='form-box';
+  rNotes();
+}
+function delNote(i) { const d=gd(); d.notes.splice(i,1); ud({notes:d.notes}); rNotes(); }
+
+// ══════════════════════════════════════════
+// MEMORY
+// ══════════════════════════════════════════
+function rMem() {
+  const d=gd(); const el=document.getElementById('mlist');
+  if (!d.mem.length) { el.innerHTML='<div class="empty-state">No conversations saved yet.</div>'; return; }
+  el.innerHTML = [...d.mem].reverse().map(m => `
+    <div class="mem-card" style="margin-bottom:0.5rem">
+      <div class="mem-date">${new Date(m.date).toLocaleString()}</div>
+      <div class="mem-text">${(m.summary||'').substring(0,140)}...</div>
+    </div>`).join('');
+}
+function clrMem() {
+  if (confirm('Clear all conversation history?')) { ud({mem:[]}); rMem(); }
+}
+function saveMem(ut, at) {
+  if (!ut.length) return;
+  const d=gd();
+  d.mem.push({ date:Date.now(), userTexts:ut, aiTexts:at, summary:at.join(' ').substring(0,200) });
+  if (d.mem.length>50) d.mem=d.mem.slice(-50);
+  ud({mem:d.mem}); rMem();
+}
+function memCtx() {
+  const d=gd(); if (!d.mem.length) return '';
+  let ctx='\n\n=== Previous Conversations ===\n';
+  for (const m of d.mem.slice(-10)) {
+    ctx+=`\n[${new Date(m.date).toLocaleDateString()}]\n`;
+    const n=Math.min(m.userTexts.length,m.aiTexts.length);
+    for (let i=0;i<n;i++) {
+      if(m.userTexts[i]) ctx+=`User: ${m.userTexts[i]}\n`;
+      if(m.aiTexts[i]) ctx+=`Assistant: ${m.aiTexts[i]}\n`;
+    }
+  }
+  return ctx+'=== End ===\n';
+}
+function tasksCtx() {
+  const d=gd(); const p=d.tasks.filter(t=>!t.done);
+  return p.length ? '\n\nPending tasks: '+p.map(t=>t.title+(t.date?' (due:'+t.date+')':'')).join(', ') : '';
+}
+function notesCtx() {
+  const d=gd(); if (!d.notes.length) return '';
+  return '\n\nNotes: '+d.notes.slice(0,5).map(n=>n.title+': '+n.content.substring(0,50)).join(' | ');
+}
+
+// ══════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════
+function expData() {
+  const d=gd(); const s={tasks:d.tasks,notes:d.notes,mem:d.mem};
+  const b=new Blob([JSON.stringify(s,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download='jasem-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+}
+
+// ══════════════════════════════════════════
+// VOICE
+// ══════════════════════════════════════════
+let ws=null, actx=null, mstream=null, proc=null;
+let aq=[], playing=false, csrc=null;
+let connected=false, speaking=false;
+let utexts=[], atexts=[];
+let curItemId=null, samplesOut=0;
+
+function orbSet(state) {
+  const orb=document.getElementById('orb');
+  const lbl=document.getElementById('orb-lbl');
+  const ring=document.getElementById('orb-ring');
+  const end=document.getElementById('end-btn');
+  const ta=document.getElementById('tx-area');
+  orb.className = 'orb'+(state==='listen'?' listen':state==='speak'?' speak':'');
+  ring.className = 'orb-ring'+(connected?' active':'');
+  const icons={idle:'🎙️',listen:'🎙️',speak:'🔊',think:'⏳',ready:'🎙️'};
+  const lbls={idle:'Tap to start',listen:'Listening...',speak:'Speaking...',think:'Processing...',ready:'Speak freely'};
+  orb.textContent = icons[state]||'🎙️';
+  lbl.textContent = lbls[state]||state;
+  end.style.display = connected ? '' : 'none';
+  ta.style.display = connected ? 'flex' : 'none';
+}
+
+async function tapOrb() {
+  if (connected) { stopVoice(); return; }
+  await startVoice();
+}
+
+async function startVoice() {
+  const d=gd();
+  if (!d.key) { alert('No API key. Go to Settings.'); return; }
+  utexts=[]; atexts=[];
+  try {
+    mstream = await navigator.mediaDevices.getUserMedia({audio:true});
+    actx = new AudioContext({sampleRate:24000});
+    connected=true; orbSet('ready');
+    d.prov==='xai' ? startXAI(d) : startGemini(d);
+  } catch(e) { alert('Microphone error: '+e.message); }
+}
+
+// ── xAI ──
+function startXAI(d) {
+  // xAI requires auth header - use subprotocol workaround
+  ws = new WebSocket('wss://api.x.ai/v1/realtime', [`xai-client-secret.${d.key}`]);
+
+  ws.onopen = () => {
+    const instr = `You are JaSeM, a helpful personal voice assistant. Be concise and natural.${memCtx()}${tasksCtx()}${notesCtx()}\nToday: ${new Date().toUTCString()}`;
+    ws.send(JSON.stringify({
+      type:'session.update', session:{
+        instructions: instr,
+        voice: d.voice||'eve',
+        turn_detection: {type:'server_vad'},
+        audio: { input:{format:{type:'audio/pcm',rate:24000}}, output:{format:{type:'audio/pcm',rate:24000}} },
+        tools: xaiTools()
+      }
+    }));
+    startMic();
+  };
+  ws.onmessage = async e => { await onXAI(JSON.parse(e.data)); };
+  ws.onerror = () => stopVoice();
+  ws.onclose = () => { if(connected) stopVoice(); };
+}
+
+async function onXAI(m) {
+  switch(m.type) {
+    case 'input_audio_buffer.speech_started':
+      orbSet('listen'); if(speaking) interrupt(); break;
+    case 'input_audio_buffer.speech_stopped':
+      orbSet('think'); break;
+    case 'response.created':
+      curItemId=m.response?.id||null; samplesOut=0; speaking=true; orbSet('speak');
+      document.getElementById('tx-ai-text').textContent='';
+      document.getElementById('tx-ai').style.display=''; break;
+    case 'response.output_item.added':
+      if(m.item?.id){curItemId=m.item.id;samplesOut=0;} break;
+    case 'response.audio.delta':
+      if(m.delta){ const b=b64buf(m.delta); samplesOut+=b.byteLength/2; aq.push(b); if(!playing)playQ(); } break;
+    case 'response.audio_transcript.delta':
+      if(m.delta){ document.getElementById('tx-ai-text').textContent+=m.delta; document.getElementById('tx-ai').style.display=''; } break;
+    case 'response.audio_transcript.done':
+      if(m.transcript) atexts.push(m.transcript); break;
+    case 'conversation.item.input_audio_transcription.completed':
+      if(m.transcript){ utexts.push(m.transcript); document.getElementById('tx-user-text').textContent=m.transcript; document.getElementById('tx-user').style.display=''; } break;
+    case 'response.done':
+      speaking=false; orbSet('ready'); break;
+    case 'response.output_item.done':
+      if(m.item?.type==='function_call') await doFn(m.item.call_id,m.item.name,m.item.arguments); break;
+  }
+}
+
+function interrupt() {
+  if(ws?.readyState===WebSocket.OPEN) {
+    ws.send(JSON.stringify({type:'response.cancel'}));
+    if(curItemId) ws.send(JSON.stringify({type:'conversation.item.truncate',item_id:curItemId,content_index:0,audio_end_ms:Math.floor(samplesOut/24)}));
+  }
+  aq=[]; if(csrc){try{csrc.stop();}catch(e){} csrc=null;} playing=false; speaking=false;
+}
+
+// ── Gemini ──
+function startGemini(d) {
+  ws = new WebSocket(`wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${d.key}`);
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ setup: {
+      model:'models/gemini-2.0-flash-exp',
+      generation_config:{ response_modalities:['AUDIO'], speech_config:{voice_config:{prebuilt_voice_config:{voice_name:'Puck'}}} },
+      system_instruction:{ parts:[{text:`You are JaSeM, a helpful personal voice assistant. Be concise.${memCtx()}${tasksCtx()}${notesCtx()}\nDate: ${new Date().toUTCString()}`}] },
+      tools:[{function_declarations:gemFns()}]
+    }}));
+    startMic();
+  };
+  ws.onmessage = async e => { await onGem(JSON.parse(e.data)); };
+  ws.onerror = () => stopVoice();
+  ws.onclose = () => { if(connected) stopVoice(); };
+}
+
+async function onGem(m) {
+  if (m.serverContent) {
+    const sc=m.serverContent;
+    if(sc.interrupted){speaking=false;orbSet('ready');return;}
+    if(sc.modelTurn?.parts) for(const p of sc.modelTurn.parts) {
+      if(p.inlineData?.mimeType?.includes('audio')){speaking=true;orbSet('speak');const b=b64buf(p.inlineData.data);aq.push(b);if(!playing)playQ();}
+      if(p.text){document.getElementById('tx-ai-text').textContent+=p.text;document.getElementById('tx-ai').style.display='';atexts.push(p.text);}
+      if(p.functionCall) await doFn(p.functionCall.id,p.functionCall.name,JSON.stringify(p.functionCall.args));
+    }
+    if(sc.turnComplete){speaking=false;orbSet('ready');}
+  }
+  if(m.inputTranscription?.text){utexts.push(m.inputTranscription.text);document.getElementById('tx-user-text').textContent=m.inputTranscription.text;document.getElementById('tx-user').style.display='';}
+}
+
+// ── Mic ──
+function startMic() {
+  const src=actx.createMediaStreamSource(mstream);
+  proc=actx.createScriptProcessor(4096,1,1);
+  src.connect(proc); proc.connect(actx.destination);
+  proc.onaudioprocess = e => {
+    if(!ws||ws.readyState!==WebSocket.OPEN) return;
+    const f=e.inputBuffer.getChannelData(0);
+    const p=new Int16Array(f.length);
+    for(let i=0;i<f.length;i++) p[i]=Math.max(-32768,Math.min(32767,f[i]*32768));
+    const b=buf64(p.buffer);
+    const d=gd();
+    if(d.prov==='xai') ws.send(JSON.stringify({type:'input_audio_buffer.append',audio:b}));
+    else ws.send(JSON.stringify({realtimeInput:{mediaChunks:[{mimeType:'audio/pcm;rate=24000',data:b}]}}));
+  };
+}
+
+// ── Playback ──
+function playQ() {
+  if(!actx||!aq.length){playing=false;return;}
+  playing=true;
+  const buf=aq.shift();
+  const p=new Int16Array(buf);
+  const f=new Float32Array(p.length);
+  for(let i=0;i<p.length;i++) f[i]=p[i]/32768;
+  const ab=actx.createBuffer(1,f.length,24000);
+  ab.getChannelData(0).set(f);
+  const s=actx.createBufferSource();
+  s.buffer=ab; s.connect(actx.destination); csrc=s;
+  s.onended=()=>{csrc=null;playQ();};
+  s.start();
+}
+
+function stopVoice() {
+  if(!connected) return;
+  saveMem(utexts,atexts);
+  connected=false; speaking=false;
+  if(ws){try{ws.close();}catch(e){} ws=null;}
+  if(proc){proc.disconnect();proc=null;}
+  if(mstream){mstream.getTracks().forEach(t=>t.stop());mstream=null;}
+  if(actx){actx.close();actx=null;}
+  if(csrc){try{csrc.stop();}catch(e){} csrc=null;}
+  aq=[]; playing=false;
+  orbSet('idle');
+  document.getElementById('tx-area').style.display='none';
+  document.getElementById('tx-user').style.display='none';
+  document.getElementById('tx-ai').style.display='none';
+}
+
+// ── Function calling ──
+function xaiTools() {
+  return [
+    {type:'web_search'},{type:'x_search'},
+    {type:'function',name:'create_task',description:'Create a task',parameters:{type:'object',properties:{title:{type:'string'},dueDate:{type:'string'}},required:['title']}},
+    {type:'function',name:'list_tasks',description:'List tasks',parameters:{type:'object',properties:{showCompleted:{type:'boolean'}}}},
+    {type:'function',name:'create_note',description:'Save a note',parameters:{type:'object',properties:{title:{type:'string'},content:{type:'string'}},required:['title','content']}},
+    {type:'function',name:'list_notes',description:'List notes',parameters:{type:'object',properties:{}}},
+  ];
+}
+function gemFns() {
+  return [
+    {name:'create_task',description:'Create task',parameters:{type:'OBJECT',properties:{title:{type:'STRING'},dueDate:{type:'STRING'}},required:['title']}},
+    {name:'list_tasks',description:'List tasks',parameters:{type:'OBJECT',properties:{showCompleted:{type:'BOOLEAN'}}}},
+    {name:'create_note',description:'Save note',parameters:{type:'OBJECT',properties:{title:{type:'STRING'},content:{type:'STRING'}},required:['title','content']}},
+    {name:'list_notes',description:'List notes',parameters:{type:'OBJECT',properties:{}}},
+  ];
+}
+
+async function doFn(id, name, argsJson) {
+  let a={}; try{a=typeof argsJson==='string'?JSON.parse(argsJson):argsJson;}catch(e){}
+  const d=gd(); let r={};
+  switch(name) {
+    case 'create_task': d.tasks.unshift({title:a.title,date:a.dueDate||'',done:false,id:Date.now()}); ud({tasks:d.tasks}); rTasks(); r={success:true,message:'Task created: '+a.title}; break;
+    case 'list_tasks': r={tasks:(a.showCompleted?d.tasks:d.tasks.filter(t=>!t.done)).map(t=>({title:t.title,done:t.done,date:t.date}))}; break;
+    case 'create_note': d.notes.unshift({title:a.title,content:a.content,id:Date.now()}); ud({notes:d.notes}); rNotes(); r={success:true,message:'Note saved: '+a.title}; break;
+    case 'list_notes': r={notes:d.notes.map(n=>({title:n.title,preview:n.content.substring(0,80)}))}; break;
+  }
+  if(!ws||ws.readyState!==WebSocket.OPEN) return;
+  if(d.prov==='xai') {
+    ws.send(JSON.stringify({type:'conversation.item.create',item:{type:'function_call_output',call_id:id,output:JSON.stringify(r)}}));
+    ws.send(JSON.stringify({type:'response.create'}));
+  } else {
+    ws.send(JSON.stringify({toolResponse:{functionResponses:[{id,name,response:{output:r}}]}}));
+  }
+}
+
+// ── Utils ──
+function b64buf(b64) { const bin=atob(b64); const buf=new ArrayBuffer(bin.length); const v=new Uint8Array(buf); for(let i=0;i<bin.length;i++)v[i]=bin.charCodeAt(i); return buf; }
+function buf64(buf) { const b=new Uint8Array(buf); let s=''; for(let i=0;i<b.length;i++)s+=String.fromCharCode(b[i]); return btoa(s); }
+</script>
+</body>
+</html>
